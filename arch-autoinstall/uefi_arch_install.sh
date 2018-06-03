@@ -3,8 +3,8 @@
 ############### SCRIPT PARAMETERS ###############
 
 # Set your USERNAME and HOSTNAME 
-MYHOSTNAME="hostnameGosHere"
-USERNAME="usernameGoesHere"
+MYHOSTNAME="yourHostnameHere"
+USERNAME="yourUsernameHere"
 LANG="en_US.UTF-8"
 diskpass=""
 diskpassconfirm="1"
@@ -24,12 +24,12 @@ CIPHER="aes-xts-plain64"
 KEY_SIZE="512"
 HASH="sha512"
 ITER_TIME="20000" # Number of milliseconds to spend w/PBKDF2 passphrase processing
-SECURE_WIPE=true
+SECURE_WIPE=false
 # Security parameters
 SANDBOX=true;
 
 # Package manager (pacman)  parameters
-ADDLPKGS="file-roller acpi compton obs-studio sudo vlc intel-ucode dmidecode thunar ie-wm i3status i3lock rxvt-unicode pulseaudio pavucontrol xorg-server xorg-xinit bluez bluez-utils pulseaudio-bluetooth pulseaudio-alsa bluez-libs ttf-liberation ttf-roboto noto-fonts ttf-ubuntu-font-family adobe-source-code-pro-fonts chromium firefox rofi thunderbird xbindkeys xf86-video-intel wget p7zip unzip unrar tmux lxappearance openssh nodejs npm ntfs-3g okular dnsutils i3blocks python-pip python audacity lsof iptables firejail"
+ADDLPKGS="file-roller acpi compton obs-studio sudo vlc intel-ucode dmidecode thunar i3-wm i3status i3lock rxvt-unicode pulseaudio pavucontrol xorg-server xorg-xinit bluez bluez-utils pulseaudio-bluetooth pulseaudio-alsa bluez-libs ttf-liberation ttf-roboto noto-fonts ttf-ubuntu-font-family adobe-source-code-pro-fonts chromium firefox rofi thunderbird xbindkeys xf86-video-intel wget p7zip unzip unrar tmux lxappearance openssh nodejs npm ntfs-3g okular dnsutils i3blocks python-pip python audacity lsof iptables firejail"
 
 #################################################
 
@@ -38,7 +38,7 @@ while [ "$diskpass" != "$diskpassconfirm" || "$diskpass" == "" ]; do
 	echo -n "Specify your disk password: ";
 	read -s diskpass; echo;
 	echo -n "Please retype password to verify: ";
-	read -s diskpassconfirm; echo;
+	read -s diskpassconfirm; echo
 done
 
 # Prompt user for ROOT account password
@@ -52,13 +52,16 @@ done
 # Prompt user for USER account password
 while [ "$userpass" != "$userpassconfirm" || "$userpass" == "" ]; do
 	echo -n "Specify your user account password for $USERNAME: ";
-	read -s userpass; echo;
+	read -s userpass; echo "";
 	echo -n "Please retype password to confirm: "
-	read -s userpassconfirm; echo;
+	read -s userpassconfirm; echo
 done
 
 # Check for internet connectivity
-ping -c 3 archlinux.org || {echo "Unable to establish connection to arch servers. Check your settings" && exit 1};
+if ! ping -c 3 archlinux.org; then
+	echo "Unable to establish connection to arch servers. Check your settings";
+	exit 1;
+fi
 
 # Update system clock
 timedatectl set-ntp true;
@@ -68,6 +71,7 @@ timedatectl set-ntp true;
 if $SECURE_WIPE; then
 	if cryptsetup open --type plain -d /dev/urandom $DRIVE to_be_wiped; then
 		dd if=/dev/zero of=/dev/mapper/to_be_wiped status=progress;
+		cryptsetup close /dev/mapper/to_be_wiped;
 	else
 		echo "Target device $DRIVE could not be opened. Exiting...";
 		exit 1;
@@ -189,7 +193,7 @@ hwclock --systohc;
 
 # Update Locale
 echo "LANG=$LANG" > /etc/locale.conf;
-sed -i 's/^#en_US\.UTF-8/en_US\.UTF-8' /etc/locale.gen
+sed -i 's/^#en_US\.UTF-8/en_US\.UTF-8/' /etc/locale.gen
 locale-gen;
 
 
@@ -220,8 +224,8 @@ if [ $SANDBOX ]; then
 	# Internet Sandboxing
 	groupadd no-internet;
 	usermod -a -G no-internet $USERNAME;
-	mkdir /home/$USERNAME/bin
-	echo -ne '#!/bin/bash''\n'sg no-internet '"$@"';
+	mkdir /home/$USERNAME/.local/bin
+	echo -ne \#\!/bin/bash\\nsg no-internet \"\$@\" > /home/$USERNAME/bin/no-internet;
 	chown -R "$USERNAME":users /home/$USERNAME/bin;
 	chmod 755 /home/$USERNAME/bin/no-internet;
 	# Set associated firewall rules for no-internet group
