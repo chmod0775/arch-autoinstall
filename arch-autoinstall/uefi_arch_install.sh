@@ -28,13 +28,16 @@ SECURE_WIPE=false
 # Security parameters
 SANDBOX=true;
 
+# Set mkinitcpio parameters here
+MODULES="";
+
 # Package manager (pacman)  parameters
 ADDLPKGS="file-roller acpi compton obs-studio sudo vlc intel-ucode dmidecode thunar i3-wm i3status i3lock rxvt-unicode pulseaudio pavucontrol xorg-server xorg-xinit bluez bluez-utils pulseaudio-bluetooth pulseaudio-alsa bluez-libs ttf-liberation ttf-roboto noto-fonts ttf-ubuntu-font-family adobe-source-code-pro-fonts chromium firefox rofi thunderbird xbindkeys xf86-video-intel wget p7zip unzip unrar tmux lxappearance openssh nodejs npm ntfs-3g okular dnsutils i3blocks python-pip python audacity lsof iptables firejail"
 
 #################################################
 
 # Prompt user for encryption password
-while [ "$diskpass" != "$diskpassconfirm" || "$diskpass" == "" ]; do
+while [[ "$diskpass" != "$diskpassconfirm" || "$diskpass" == "" ]]; do
 	echo -n "Specify your disk password: ";
 	read -s diskpass; echo;
 	echo -n "Please retype password to verify: ";
@@ -42,7 +45,7 @@ while [ "$diskpass" != "$diskpassconfirm" || "$diskpass" == "" ]; do
 done
 
 # Prompt user for ROOT account password
-while [ "$rootpass" != "$rootpassconfirm" || "$rootpass" == "" ]; do
+while [[ "$rootpass" != "$rootpassconfirm" || "$rootpass" == "" ]]; do
 	echo -n "Specify your root password: ";
 	read -s rootpass; echo;
 	echo -n "Please retype root password to verify: ";
@@ -50,7 +53,7 @@ while [ "$rootpass" != "$rootpassconfirm" || "$rootpass" == "" ]; do
 done
 
 # Prompt user for USER account password
-while [ "$userpass" != "$userpassconfirm" || "$userpass" == "" ]; do
+while [[ "$userpass" != "$userpassconfirm" || "$userpass" == "" ]]; do
 	echo -n "Specify your user account password for $USERNAME: ";
 	read -s userpass; echo "";
 	echo -n "Please retype password to confirm: "
@@ -131,7 +134,7 @@ mkfs.ext4 -F /dev/mapper/vg0-root;
 mkswap /dev/mapper/vg0-swap;
 
 # Get UUID of encrypted drive (will be used as mount instructions for grub)
-UUID="$(blkid | grep crypto | awk '{print $2}'| sed 's/\"//g')"
+UUID="$(blkid | grep $DRIVE | $grep crypto | awk '{print $2}'| sed 's/\"//g')"
 
 # Mount the new system
 mount /dev/mapper/vg0-root /mnt;
@@ -159,6 +162,7 @@ echo -n "tmpfs	/tmp	tmpfs	defaults,noatime,mode=1777	0	0" >> /mnt/etc/fstab; # S
 echo '#!/bin/bash' > /mnt/install-cont.sh;
 echo "UUID=\"$UUID\"; # Pass variables to 2nd script
 DRIVE=\"$DRIVE\";
+MODULES=\"$MODULES\";
 HOSTNAME=\"$MYHOSTNAME\";
 USERNAME=\"$USERNAME\";
 LANG=\"$LANG\";
