@@ -134,7 +134,7 @@ mkfs.ext4 -F /dev/mapper/vg0-root;
 mkswap /dev/mapper/vg0-swap;
 
 # Get UUID of encrypted drive (will be used as mount instructions for grub)
-UUID="$(blkid | grep $DRIVE | $grep crypto | awk '{print $2}'| sed 's/\"//g')"
+UUID="$(blkid | grep $DRIVE | grep crypto | awk '{print $2}'| sed 's/\"//g')"
 
 # Mount the new system
 mount /dev/mapper/vg0-root /mnt;
