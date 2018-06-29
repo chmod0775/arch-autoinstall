@@ -80,6 +80,11 @@ if $SECURE_WIPE; then
 		exit 1;
 	fi
 fi
+###
+# The section below will change depending on whether or not BIOS or UEFI`
+
+
+
 
 # Create partitions
 # to create the partitions programatically (rather than manually)
@@ -171,7 +176,7 @@ ADDLPKGS=\"$ADDLPKGS\";" >> /mnt/install-cont.sh;
 
 # Copy config-backup to chroot directory
 if [ -f home_backup.zip ]; then
-	cp home_backup.zip /mnt;
+	cp home_backup.zip /mntt;
 fi
 
 cat <<'EOF' >> /mnt/install-cont.sh 
@@ -202,7 +207,7 @@ locale-gen;
 
 
 # Configure mkinitcpio, add ext4 to MODULES, add 'encrypt' and 'lvm2' to HOOKS before filesystems
-sed -ri 's/^MODULES=\(/&ext4 thinkpad_acpi intel_agp i915/' /etc/mkinitcpio.conf
+sed -ri 's/^MODULES=\(/&ext4 i915/' /etc/mkinitcpio.conf
 sed -ri 's/^HOOKS=\([a-zA-Z ]*block/& encrypt lvm2/' /etc/mkinitcpio.conf
 
 # Add cryptdevice identifier to /etc/default/grub
@@ -229,9 +234,9 @@ if [ $SANDBOX ]; then
 	groupadd no-internet;
 	usermod -a -G no-internet $USERNAME;
 	mkdir /home/$USERNAME/.local/bin
-	echo -ne \#\!/bin/bash\\nsg no-internet \"\$@\" > /home/$USERNAME/bin/no-internet;
-	chown -R "$USERNAME":users /home/$USERNAME/bin;
-	chmod 755 /home/$USERNAME/bin/no-internet;
+	echo -ne \#\!/bin/bash\\nsg no-internet \"\$@\" > /home/$USERNAME/.local/bin/no-internet;
+	chown -R "$USERNAME":users /home/$USERNAME/.local/bin;
+	chmod 755 /home/$USERNAME/.local/bin/no-internet;
 	# Set associated firewall rules for no-internet group
 	iptables -I OUTPUT 1 -m owner --gid-owner no-internet -j DROP;
 	iptables-save > /etc/iptables/iptables.rules;
