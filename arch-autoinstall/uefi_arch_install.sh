@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# Created and maintained by @chmod0775
 ############### SCRIPT PARAMETERS ###############
 
 # Set your USERNAME and HOSTNAME 
@@ -85,7 +85,7 @@ fi
 
 
 
-
+# Credit to @user2070305 for this particular section.
 # Create partitions
 # to create the partitions programatically (rather than manually)
 # we're going to simulate the manual input to fdisk
