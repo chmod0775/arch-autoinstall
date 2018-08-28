@@ -38,6 +38,17 @@ EFI=false;
 ADDLPKGS="file-roller acpi compton obs-studio sudo vlc intel-ucode dmidecode thunar i3-wm i3status i3lock rxvt-unicode pulseaudio pavucontrol xorg-server xorg-xinit bluez bluez-utils pulseaudio-bluetooth pulseaudio-alsa bluez-libs ttf-liberation ttf-roboto noto-fonts ttf-ubuntu-font-family adobe-source-code-pro-fonts chromium firefox rofi thunderbird xbindkeys xf86-video-intel wget p7zip unzip unrar tmux lxappearance openssh nodejs npm ntfs-3g okular dnsutils i3blocks python-pip python audacity lsof iptables firejail"
 
 #################################################
+# Prompt user for hostname
+while [[ "$MYHOSTNAME" == "yourHostnameHere" | "$MYHOSTNAME" == "" ]]; do
+	echo -n "What would you like your computer name to show up as? (hostname): "
+	read -s MYHOSTNAME; echo;
+done
+
+# Prompt user for non-root username
+while [[ "$USERNAME" == "yourUsernameHere" | "$USERNAME" == "" ]]; do
+	echo -n "Specify the non-root account username: "
+	read -s USERNAME; echo;
+done
 
 # Prompt user for encryption password
 while [[ "$diskpass" != "$diskpassconfirm" || "$diskpass" == "" ]]; do
@@ -150,12 +161,19 @@ function BIOS_PREPARE() {
 	  n # new partition
 	  1 # partition number 1
 	    # default - start at beginning of disk 
-	  $BOOT_SIZE  # BOOT partition, default size is 200MB 
+	  +1M  # BIOS partition (this is where Grub entry will reside)
 	  t # change partition type
 	  4 # set type to BIOS BOOT 
 	  n # new partition
 	  2 # partition number 2 
 	    # default, start immediately after preceding partition
+	  $BOOT_SIZE # Boot partition, where /boot will reside
+	  t # change partition type
+	  2 # select the 2nd partition
+	  20 # set type to Linux filesytem
+	  n # new partition
+	  3 # partition number 3
+            # default, start immediately after preceding partition
 	  $CRYPT_SIZE # Encryption partition, default size is 100% of remaining freespace 
 	  t # change partition type
 	  2 # select the 2nd partition 
@@ -169,8 +187,8 @@ function BIOS_PREPARE() {
 	mkfs.vfat -F32 "$DRIVE"1;
 
 
-	BOOT_PART=""$DRIVE"1";
-	CRYPT_PART=""$DRIVE"2";
+	BOOT_PART=""$DRIVE"2";
+	CRYPT_PART=""$DRIVE"3";
 }
 
 # Prepare the drives (create partitions and filesystems)
