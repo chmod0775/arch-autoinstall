@@ -152,14 +152,12 @@ function BIOS_PREPARE() {
 	    # default - start at beginning of disk 
 	  $BOOT_SIZE  # BOOT partition, default size is 200MB 
 	  t # change partition type
-	  2 # select second partition
-	  20 # set type to Linux filesystem
+	  4 # set type to BIOS BOOT 
 	  n # new partition
 	  2 # partition number 2 
 	    # default, start immediately after preceding partition
 	  $CRYPT_SIZE # Encryption partition, default size is 100% of remaining freespace 
 	  t # change partition type
-	  2  # select 2nd partition
 	  20 # set type to Linux filesystem
 	  p # print the in-memory partition table
 	  w # write changes to disk
