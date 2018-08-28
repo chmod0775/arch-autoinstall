@@ -39,15 +39,15 @@ ADDLPKGS="file-roller acpi compton obs-studio sudo vlc intel-ucode dmidecode thu
 
 #################################################
 # Prompt user for hostname
-while [[ "$MYHOSTNAME" == "yourHostnameHere" | "$MYHOSTNAME" == "" ]]; do
+while [[ "$MYHOSTNAME" == "yourHostnameHere" || "$MYHOSTNAME" == "" ]]; do
 	echo -n "What would you like your computer name to show up as? (hostname): "
-	read -s MYHOSTNAME; echo;
+	read MYHOSTNAME; echo;
 done
 
 # Prompt user for non-root username
-while [[ "$USERNAME" == "yourUsernameHere" | "$USERNAME" == "" ]]; do
+while [[ "$USERNAME" == "yourUsernameHere" || "$USERNAME" == "" ]]; do
 	echo -n "Specify the non-root account username: "
-	read -s USERNAME; echo;
+	read USERNAME; echo;
 done
 
 # Prompt user for encryption password
@@ -184,7 +184,7 @@ function BIOS_PREPARE() {
 	EOF
 
 	# Create filesystems for partitions
-	mkfs.vfat -F32 "$DRIVE"1;
+	mkfs.ext2 "$DRIVE"2;
 
 
 	BOOT_PART=""$DRIVE"2";
