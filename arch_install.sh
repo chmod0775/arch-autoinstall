@@ -31,6 +31,9 @@ SANDBOX=true;
 # Set mkinitcpio parameters here
 MODULES="";
 
+# Initialize EFI flag as false, script will later check for EFI support and set flag appropriately
+EFI=false;
+
 # Package manager (pacman)  parameters
 ADDLPKGS="file-roller acpi compton obs-studio sudo vlc intel-ucode dmidecode thunar i3-wm i3status i3lock rxvt-unicode pulseaudio pavucontrol xorg-server xorg-xinit bluez bluez-utils pulseaudio-bluetooth pulseaudio-alsa bluez-libs ttf-liberation ttf-roboto noto-fonts ttf-ubuntu-font-family adobe-source-code-pro-fonts chromium firefox rofi thunderbird xbindkeys xf86-video-intel wget p7zip unzip unrar tmux lxappearance openssh nodejs npm ntfs-3g okular dnsutils i3blocks python-pip python audacity lsof iptables firejail"
 
@@ -69,7 +72,15 @@ fi
 # Update system clock
 timedatectl set-ntp true;
 
-# Secure wipe ensures that drive is initialized with a random array of 0's and 1's,
+# Verify the boot mode and set EFI flag 
+if ls /sys/firmware/efi/efivars; then
+	EFI=true;
+	echo "Your motherboard supports booting via UEFI";
+else
+	echo "Your motherboard only supports BIOS boot modes";
+fi
+
+# Secure wipe ensures that the drive is initialized with a random array of 0's and 1's,
 # making free space indistinguishable from future encrypted sections. 
 if $SECURE_WIPE; then
 	if cryptsetup open --type plain -d /dev/urandom $DRIVE to_be_wiped; then
@@ -80,53 +91,100 @@ if $SECURE_WIPE; then
 		exit 1;
 	fi
 fi
-###
-# The section below will change depending on whether or not BIOS or UEFI`
+
+# There is some duplicate code shared between EFI_PREPARE AND BIOS_PREPARE. I would like to trim away the fat from these two functions, but I'm not currently sure
+# how I would like to do that.
+
+function EFI_PREPARE() {
+	# Credit to @user2070305 for this particular section.
+	# Create partitions
+	# to create the partitions programatically (rather than manually)
+	# we're going to simulate the manual input to fdisk
+	# The sed script strips off all the comments so that we can 
+	# document what we're doing in-line with the actual commands
+	# Note that a blank line (commented as "defualt" will send a empty
+	# line terminated with a newline to take the fdisk default.
+	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<-EOF | fdisk ${DRIVE}
+	  g # clear the in memory partition table
+	  n # new partition
+	  1 # partition number 1
+	    # default - start at beginning of disk 
+	  $EFI_SIZE# EFI parttion, default is 150MB
+	  t # change partition type
+	  1 # Make sure partition is efi
+	  n # new partition
+	  2 # partion number 2
+	    # default, start immediately after preceding partition
+	  $BOOT_SIZE  # BOOT partition, default size is 200MB 
+	  t # change partition type
+	  2 # select second partition
+	  20 # set type to Linux filesystem
+	  n # new partition
+	  3 # partition number 3
+	    # default, start immediately after preceding partition
+	  $CRYPT_SIZE # Encryption partition, default size is 100% of remaining freespace 
+	  t # change partition type
+	  3 # select 3rd partition
+	  20 # set type to Linux filesystem
+	  p # print the in-memory partition table
+	  w # write changes to disk
+	  q # and we're done
+	EOF
+
+	# Create filesystems for partitions
+	mkfs.vfat -F32 "$DRIVE"1;
+	mkfs.ext2 -F "$DRIVE"2;
+
+	# Setup encryption of the system
+	echo -n "$diskpass" | cryptsetup -v -c $CIPHER -s $KEY_SIZE -h $HASH -i $ITER_TIME --use-random luksFormat "$DRIVE"3 -;
+	echo -n "$diskpass" | cryptsetup luksOpen "$DRIVE"3 luks;
+	
+	BOOT_PART=""$DRIVE"1";
+	EFI_PART=""$DRIVE"2";
+	CRYPT_PART=""$DRIVE"3";
+}
+
+function BIOS_PREPARE() {
+	sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' <<-EOF | fdisk ${DRIVE}
+	  g # clear the in memory partition table
+	  n # new partition
+	  1 # partition number 1
+	    # default - start at beginning of disk 
+	  $BOOT_SIZE  # BOOT partition, default size is 200MB 
+	  t # change partition type
+	  2 # select second partition
+	  20 # set type to Linux filesystem
+	  n # new partition
+	  2 # partition number 2 
+	    # default, start immediately after preceding partition
+	  $CRYPT_SIZE # Encryption partition, default size is 100% of remaining freespace 
+	  t # change partition type
+	  2  # select 2nd partition
+	  20 # set type to Linux filesystem
+	  p # print the in-memory partition table
+	  w # write changes to disk
+	  q # and we're done
+	EOF
+
+	# Create filesystems for partitions
+	mkfs.vfat -F32 "$DRIVE"1;
 
 
+	BOOT_PART=""$DRIVE"1";
+	CRYPT_PART=""$DRIVE"2";
+}
 
-# Credit to @user2070305 for this particular section.
-# Create partitions
-# to create the partitions programatically (rather than manually)
-# we're going to simulate the manual input to fdisk
-# The sed script strips off all the comments so that we can 
-# document what we're doing in-line with the actual commands
-# Note that a blank line (commented as "defualt" will send a empty
-# line terminated with a newline to take the fdisk default.
-sed -e 's/\s*\([\+0-9a-zA-Z]*\).*/\1/' << EOF | fdisk ${DRIVE}
-  g # clear the in memory partition table
-  n # new partition
-  1 # partition number 1
-    # default - start at beginning of disk 
-  $EFI_SIZE# EFI parttion, default is 150MB
-  t # change partition type
-  1 # Make sure partition is efi
-  n # new partition
-  2 # partion number 2
-    # default, start immediately after preceding partition
-  $BOOT_SIZE  # BOOT partition, default size is 200MB 
-  t # change partition type
-  2 # select second partition
-  20 # set type to Linux filesystem
-  n # new partition
-  3 # partition number 3
-    # default, start immediately after preceding partition
-  $CRYPT_SIZE # Encryption partition, default size is 100% of remaining freespace 
-  t # change partition type
-  3 # select 3rd partition
-  20 # set type to Linux filesystem
-  p # print the in-memory partition table
-  w # write changes to disk
-  q # and we're done
-EOF
-
-# Create filesystems for partitions
-mkfs.vfat -F32 "$DRIVE"1;
-mkfs.ext2 -F "$DRIVE"2;
+# Prepare the drives (create partitions and filesystems)
+if $EFI; then
+	EFI_PREPARE; 
+else
+	BIOS_PREPARE;
+fi
 
 # Setup encryption of the system
-echo -n "$diskpass" | cryptsetup -v -c $CIPHER -s $KEY_SIZE -h $HASH -i $ITER_TIME --use-random luksFormat "$DRIVE"3 -;
-echo -n "$diskpass" | cryptsetup luksOpen "$DRIVE"3 luks;
+echo -n "$diskpass" | cryptsetup -v -c $CIPHER -s $KEY_SIZE -h $HASH -i $ITER_TIME --use-random luksFormat "$CRYPT_PART" -;
+echo -n "$diskpass" | cryptsetup luksOpen "$CRYPT_PART" luks;
+
 
 # Create encrypted partitions via Logical Volume Manager (LVM)
 pvcreate /dev/mapper/luks;
@@ -145,9 +203,12 @@ UUID="$(blkid | grep $DRIVE | grep crypto | awk '{print $2}'| sed 's/\"//g')"
 mount /dev/mapper/vg0-root /mnt;
 swapon /dev/mapper/vg0-swap;
 mkdir /mnt/boot;
-mount "$DRIVE"2 /mnt/boot;
-mkdir /mnt/boot/efi;
-mount "$DRIVE"1 /mnt/boot/efi;
+mount "$BOOT_PART" /mnt/boot;
+if $EFI; then
+	mkdir /mnt/boot/efi;
+	mount $EFI_PART /mnt/boot/efi;
+fi
+
 
 # Fetch a new mirrorlist and ensure that all sections are uncommented
 curl -o /etc/pacman.d/mirrorlist 'https://www.archlinux.org/mirrorlist/?country=US&protocol=http&protocol=https&ip_version=4';
