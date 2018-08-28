@@ -158,6 +158,7 @@ function BIOS_PREPARE() {
 	    # default, start immediately after preceding partition
 	  $CRYPT_SIZE # Encryption partition, default size is 100% of remaining freespace 
 	  t # change partition type
+	  2 # select the 2nd partition 
 	  20 # set type to Linux filesystem
 	  p # print the in-memory partition table
 	  w # write changes to disk
