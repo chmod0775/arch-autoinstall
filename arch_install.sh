@@ -38,6 +38,8 @@ EFI=false;
 ADDLPKGS="file-roller acpi compton obs-studio sudo vlc intel-ucode dmidecode thunar i3-wm i3status i3lock rxvt-unicode pulseaudio pavucontrol xorg-server xorg-xinit bluez bluez-utils pulseaudio-bluetooth pulseaudio-alsa bluez-libs ttf-liberation ttf-roboto noto-fonts ttf-ubuntu-font-family adobe-source-code-pro-fonts chromium firefox rofi thunderbird xbindkeys xf86-video-intel wget p7zip unzip unrar tmux lxappearance openssh nodejs npm ntfs-3g okular dnsutils i3blocks python-pip python audacity lsof iptables firejail"
 
 #################################################
+
+
 # Prompt user for hostname
 while [[ "$MYHOSTNAME" == "yourHostnameHere" || "$MYHOSTNAME" == "" ]]; do
 	echo -n "What would you like your computer name to show up as? (hostname): "
@@ -150,8 +152,8 @@ function EFI_PREPARE() {
 	echo -n "$diskpass" | cryptsetup -v -c $CIPHER -s $KEY_SIZE -h $HASH -i $ITER_TIME --use-random luksFormat "$DRIVE"3 -;
 	echo -n "$diskpass" | cryptsetup luksOpen "$DRIVE"3 luks;
 	
-	BOOT_PART=""$DRIVE"1";
-	EFI_PART=""$DRIVE"2";
+	BOOT_PART=""$DRIVE"2";
+	EFI_PART=""$DRIVE"1";
 	CRYPT_PART=""$DRIVE"3";
 }
 
