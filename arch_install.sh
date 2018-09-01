@@ -256,7 +256,7 @@ ADDLPKGS=\"$ADDLPKGS\";" >> /mnt/install-cont.sh;
 
 # Copy config-backup to chroot directory
 if [ -f home_backup.zip ]; then
-	cp home_backup.zip /mntt;
+	cp home_backup.zip /mnt;
 fi
 
 cat <<'EOF' >> /mnt/install-cont.sh 
@@ -313,7 +313,7 @@ if [ $SANDBOX ]; then
 	# Internet Sandboxing
 	groupadd no-internet;
 	usermod -a -G no-internet $USERNAME;
-	mkdir /home/$USERNAME/.local/bin
+	mkdir -p /home/$USERNAME/.local/bin
 	echo -ne \#\!/bin/bash\\nsg no-internet \"\$@\" > /home/$USERNAME/.local/bin/no-internet;
 	chown -R "$USERNAME":users /home/$USERNAME/.local/bin;
 	chmod 755 /home/$USERNAME/.local/bin/no-internet;
