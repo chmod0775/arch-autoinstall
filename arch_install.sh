@@ -25,6 +25,7 @@ KEY_SIZE="512"
 HASH="sha512"
 ITER_TIME="20000" # Number of milliseconds to spend w/PBKDF2 passphrase processing
 SECURE_WIPE=false
+
 # Security parameters
 SANDBOX=true;
 
