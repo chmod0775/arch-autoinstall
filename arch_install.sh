@@ -148,10 +148,6 @@ function EFI_PREPARE() {
 	mkfs.vfat -F32 "$DRIVE"1;
 	mkfs.ext2 -F "$DRIVE"2;
 
-	# Setup encryption of the system
-	echo -n "$diskpass" | cryptsetup -v -c $CIPHER -s $KEY_SIZE -h $HASH -i $ITER_TIME --use-random luksFormat "$DRIVE"3 -;
-	echo -n "$diskpass" | cryptsetup luksOpen "$DRIVE"3 luks;
-	
 	BOOT_PART=""$DRIVE"2";
 	EFI_PART=""$DRIVE"1";
 	CRYPT_PART=""$DRIVE"3";
